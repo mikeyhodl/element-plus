@@ -1,22 +1,16 @@
-import { onBeforeUnmount } from 'vue'
+import { useTimeoutFn } from '@vueuse/core'
 
-import type { TimeoutHandle } from '@element-plus/utils/types'
+export const useTimeout = () => {
+  let stop: (() => void) | undefined = undefined
 
-export default function () {
-  let timeoutHandle: TimeoutHandle
-
-  onBeforeUnmount(() => {
-    clearTimeout(timeoutHandle)
-  })
+  const registerTimeout = (fn: (...args: any[]) => unknown, delay: number) => {
+    cancelTimeout()
+    ;({ stop } = useTimeoutFn(fn, delay))
+  }
+  const cancelTimeout = () => stop?.()
 
   return {
-    registerTimeout: (fn: (...args: any[]) => unknown, delay: number) => {
-      clearTimeout(timeoutHandle)
-      timeoutHandle = setTimeout(fn, delay) as any as TimeoutHandle
-    },
-
-    cancelTimeout: () => {
-      clearTimeout(timeoutHandle)
-    },
+    registerTimeout,
+    cancelTimeout,
   }
 }
