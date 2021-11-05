@@ -1,6 +1,5 @@
 export { default as useRestoreActive } from './use-restore-active'
 export { default as useModal } from './use-modal'
-export { default as useMigrating } from './use-migrating'
 export { default as useThrottleRender } from './use-throttle-render'
 export { default as usePreventGlobal } from './use-prevent-global'
 export { default as useTeleport } from './use-teleport'
