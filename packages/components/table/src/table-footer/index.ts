@@ -1,7 +1,8 @@
 // @ts-nocheck
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, inject } from 'vue'
 import { useNamespace } from '@element-plus/hooks'
-import { hColgroup } from '../h-helper'
+import useLayoutObserver from '../layout-observer'
+import { TABLE_INJECTION_KEY } from '../tokens'
 import useStyle from './style-helper'
 import type { Store } from '../store'
 
@@ -44,26 +45,25 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const parent = inject(TABLE_INJECTION_KEY)
+    const ns = useNamespace('table')
     const { getCellClasses, getCellStyles, columns } = useStyle(
       props as TableFooter<DefaultRow>
     )
-    const ns = useNamespace('table')
+    const { onScrollableChange, onColumnsChange } = useLayoutObserver(parent!)
+
     return {
       ns,
+      onScrollableChange,
+      onColumnsChange,
       getCellClasses,
       getCellStyles,
       columns,
     }
   },
   render() {
-    const {
-      columns,
-      getCellStyles,
-      getCellClasses,
-      summaryMethod,
-      sumText,
-      ns,
-    } = this
+    const { columns, getCellStyles, getCellClasses, summaryMethod, sumText } =
+      this
     const data = this.store.states.data.value
     let sums = []
     if (summaryMethod) {
@@ -105,43 +105,31 @@ export default defineComponent({
       })
     }
     return h(
-      'table',
-      {
-        class: ns.e('footer'),
-        cellspacing: '0',
-        cellpadding: '0',
-        border: '0',
-      },
-      [
-        hColgroup({
-          columns,
-        }),
-        h('tbody', [
-          h('tr', {}, [
-            ...columns.map((column, cellIndex) =>
-              h(
-                'td',
-                {
-                  key: cellIndex,
-                  colspan: column.colSpan,
-                  rowspan: column.rowSpan,
-                  class: getCellClasses(columns, cellIndex),
-                  style: getCellStyles(column, cellIndex),
-                },
-                [
-                  h(
-                    'div',
-                    {
-                      class: ['cell', column.labelClassName],
-                    },
-                    [sums[cellIndex]]
-                  ),
-                ]
-              )
-            ),
-          ]),
+      h('tfoot', [
+        h('tr', {}, [
+          ...columns.map((column, cellIndex) =>
+            h(
+              'td',
+              {
+                key: cellIndex,
+                colspan: column.colSpan,
+                rowspan: column.rowSpan,
+                class: getCellClasses(columns, cellIndex),
+                style: getCellStyles(column, cellIndex),
+              },
+              [
+                h(
+                  'div',
+                  {
+                    class: ['cell', column.labelClassName],
+                  },
+                  [sums[cellIndex]]
+                ),
+              ]
+            )
+          ),
         ]),
-      ]
+      ])
     )
   },
 })

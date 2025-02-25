@@ -61,6 +61,18 @@ Although `message` property supports HTML strings, dynamically rendering arbitra
 
 :::
 
+## Message using functions ^(2.9.0)
+
+`message` can be VNode.
+
+After ^(2.9.0), `message` supports a function whose return value is a VNode.
+
+:::demo
+
+notification/use-vnode
+
+:::
+
 ## Hide close button
 
 It is possible to hide the close button
@@ -104,28 +116,31 @@ const { appContext } = getCurrentInstance()!
 ElNotification({}, appContext)
 ```
 
-## Options
+## API
 
-| Attribute                | Description                                                                                                        | Type                  | Accepted Values                             | Default       |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------ | --------------------- | ------------------------------------------- | ------------- |
-| title                    | title                                                                                                              | string                | —                                           | —             |
-| message                  | description text                                                                                                   | string/Vue.VNode      | —                                           | —             |
-| dangerouslyUseHTMLString | whether `message` is treated as HTML string                                                                        | boolean               | —                                           | false         |
-| type                     | notification type                                                                                                  | string                | success/warning/info/error                  | —             |
-| icon                     | custom icon component. It will be overridden by `type`                                                             | `string \| Component` | —                                           | —             |
-| customClass              | custom class name for Notification                                                                                 | string                | —                                           | —             |
-| duration                 | duration before close. It will not automatically close if set 0                                                    | number                | —                                           | 4500          |
-| position                 | custom position                                                                                                    | string                | top-right/top-left/bottom-right/bottom-left | top-right     |
-| showClose                | whether to show a close button                                                                                     | boolean               | —                                           | true          |
-| onClose                  | callback function when closed                                                                                      | function              | —                                           | —             |
-| onClick                  | callback function when notification clicked                                                                        | function              | —                                           | —             |
-| offset                   | offset from the top edge of the screen. Every Notification instance of the same moment should have the same offset | number                | —                                           | 0             |
-| appendTo                 | set the root element for the notification                                                                          | string / HTMLElement  | -                                           | document.body |
-| zIndex                   | initial zIndex                                                                                                     | number                | -                                           | 0             |
+### Options
 
-## Methods
+| Name                     | Description                                                                                                        | Type                                                                  | Default   |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- | --------- |
+| title                    | title                                                                                                              | ^[string]                                                             | ''        |
+| message                  | description text                                                                                                   | ^[string] / ^[VNode] / ^[Function]`() => VNode`                       | ''        |
+| dangerouslyUseHTMLString | whether `message` is treated as HTML string                                                                        | ^[boolean]                                                            | false     |
+| type                     | notification type                                                                                                  | ^[enum]`'success' \| 'warning' \| 'info' \| 'error' \| ''`            | ''        |
+| icon                     | custom icon component. It will be overridden by `type`                                                             | ^[string] / ^[Component]                                              | —         |
+| customClass              | custom class name for Notification                                                                                 | ^[string]                                                             | ''        |
+| duration                 | duration before close. It will not automatically close if set 0                                                    | ^[number]                                                             | 4500      |
+| position                 | custom position                                                                                                    | ^[enum]`'top-right' \| 'top-left' \| 'bottom-right' \| 'bottom-left'` | top-right |
+| showClose                | whether to show a close button                                                                                     | ^[boolean]                                                            | true      |
+| onClose                  | callback function when closed                                                                                      | ^[Function]`() => void`                                               | —         |
+| onClick                  | callback function when notification clicked                                                                        | ^[Function]`() => void`                                               | —         |
+| offset                   | offset from the top edge of the screen. Every Notification instance of the same moment should have the same offset | ^[number]                                                             | 0         |
+| appendTo                 | set the root element for the notification, default to `document.body`                                              | ^[string] / ^[HTMLElement]                                            | —         |
+| zIndex                   | initial zIndex                                                                                                     | ^[number]                                                             | 0         |
+
+### Method
 
 `Notification` and `this.$notify` returns the current Notification instance. To manually close the instance, you can call `close` on it.
-| Method | Description |
-| ---- | ---- |
-| close | close the Notification |
+
+| Name  | Description            | Type                    |
+| ----- | ---------------------- | ----------------------- |
+| close | close the Notification | ^[Function]`() => void` |

@@ -1,6 +1,7 @@
 <template>
   <el-tree
     ref="treeRef"
+    style="max-width: 600px"
     :data="data"
     show-checkbox
     default-expand-all
@@ -9,7 +10,7 @@
     :props="defaultProps"
   />
 
-  <div class="buttons">
+  <div class="mt-2">
     <el-button @click="getCheckedNodes">get by node</el-button>
     <el-button @click="getCheckedKeys">get by key</el-button>
     <el-button @click="setCheckedNodes">set by node</el-button>
