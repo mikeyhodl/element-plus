@@ -1,6 +1,9 @@
 export default {
   name: 'de',
   el: {
+    breadcrumb: {
+      label: 'Brotkrümel',
+    },
     colorpicker: {
       confirm: 'OK',
       clear: 'Leeren',
@@ -67,6 +70,9 @@ export default {
       noData: 'Keine Daten',
       placeholder: 'Daten wählen',
     },
+    mention: {
+      loading: 'Lädt.',
+    },
     cascader: {
       noMatch: 'Nichts gefunden.',
       loading: 'Lädt.',
@@ -78,6 +84,12 @@ export default {
       pagesize: ' pro Seite',
       total: 'Gesamt {total}',
       pageClassifier: '',
+      page: 'Seite',
+      prev: 'Zur vorherigen Seite gehen',
+      next: 'Zur nächsten Seite gehen',
+      currentPage: 'Seite {pager}',
+      prevPages: 'Vorherige {pager} Seiten',
+      nextPages: 'Nächste {pager} Seiten',
     },
     messagebox: {
       confirm: 'OK',
@@ -96,6 +108,11 @@ export default {
       resetFilter: 'Zurücksetzen',
       clearFilter: 'Alles ',
       sumText: 'Summe',
+    },
+    tour: {
+      next: 'Weiter',
+      previous: 'Zurück',
+      finish: 'Fertig',
     },
     tree: {
       emptyText: 'Keine Einträge',
@@ -117,6 +134,11 @@ export default {
     popconfirm: {
       confirmButtonText: 'Ja',
       cancelButtonText: 'Nein',
+    },
+    carousel: {
+      leftArrow: 'Karussell-Pfeil links',
+      rightArrow: 'Karussell-Pfeil rechts',
+      indicator: 'Karussell zu Index {index} wechseln',
     },
   },
 }

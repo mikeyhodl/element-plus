@@ -38,7 +38,7 @@
             <div
               v-if="title !== null && title !== undefined"
               ref="headerRef"
-              :class="ns.e('header')"
+              :class="[ns.e('header'), { 'show-close': showClose }]"
             >
               <div :class="ns.e('title')">
                 <el-icon
@@ -62,7 +62,7 @@
                 "
               >
                 <el-icon :class="ns.e('close')">
-                  <close />
+                  <component :is="closeIcon || 'close'" />
                 </el-icon>
               </button>
             </div>
@@ -117,6 +117,7 @@
               <el-button
                 v-if="showCancelButton"
                 :loading="cancelButtonLoading"
+                :loading-icon="cancelButtonLoadingIcon"
                 :class="[cancelButtonClass]"
                 :round="roundButton"
                 :size="btnSize"
@@ -130,6 +131,7 @@
                 ref="confirmRef"
                 type="primary"
                 :loading="confirmButtonLoading"
+                :loading-icon="confirmButtonLoadingIcon"
                 :class="[confirmButtonClasses]"
                 :round="roundButton"
                 :disabled="confirmButtonDisabled"
@@ -147,10 +149,10 @@
   </transition>
 </template>
 <script lang="ts">
-// @ts-nocheck
 import {
   computed,
   defineComponent,
+  markRaw,
   nextTick,
   onBeforeUnmount,
   onMounted,
@@ -164,23 +166,22 @@ import { TrapFocus } from '@element-plus/directives'
 import {
   useDraggable,
   useId,
-  useLocale,
   useLockscreen,
-  useNamespace,
-  useRestoreActive,
   useSameTarget,
-  useSize,
-  useZIndex,
 } from '@element-plus/hooks'
 import ElInput from '@element-plus/components/input'
 import { ElOverlay } from '@element-plus/components/overlay'
 import {
   TypeComponents,
   TypeComponentsMap,
+  isFunction,
+  isString,
   isValidComponentSize,
 } from '@element-plus/utils'
 import { ElIcon } from '@element-plus/components/icon'
+import { Loading } from '@element-plus/icons-vue'
 import ElFocusTrap from '@element-plus/components/focus-trap'
+import { useGlobalComponentSettings } from '@element-plus/components/config-provider'
 
 import type { ComponentPublicInstance, PropType } from 'vue'
 import type { ComponentSize } from '@element-plus/constants'
@@ -235,6 +236,7 @@ export default defineComponent({
     },
     center: Boolean,
     draggable: Boolean,
+    overflow: Boolean,
     roundButton: {
       default: false,
       type: Boolean,
@@ -251,10 +253,20 @@ export default defineComponent({
   emits: ['vanish', 'action'],
   setup(props, { emit }) {
     // const popup = usePopup(props, doClose)
-    const { t } = useLocale()
-    const ns = useNamespace('message-box')
+    const {
+      locale,
+      zIndex,
+      ns,
+      size: btnSize,
+    } = useGlobalComponentSettings(
+      'message-box',
+      computed(() => props.buttonSize)
+    )
+
+    const { t } = locale
+    const { nextZIndex } = zIndex
+
     const visible = ref(false)
-    const { nextZIndex } = useZIndex()
     // s represents state
     const state = reactive<MessageBoxState>({
       // autofocus element when open message-box
@@ -270,13 +282,14 @@ export default defineComponent({
       dangerouslyUseHTMLString: false,
       distinguishCancelAndClose: false,
       icon: '',
+      closeIcon: '',
       inputPattern: null,
       inputPlaceholder: '',
       inputType: 'text',
-      inputValue: null,
-      inputValidator: null,
+      inputValue: '',
+      inputValidator: undefined,
       inputErrorMessage: '',
-      message: null,
+      message: '',
       modalFade: true,
       modalClass: '',
       showCancelButton: false,
@@ -287,6 +300,8 @@ export default defineComponent({
       action: '' as Action,
       confirmButtonLoading: false,
       cancelButtonLoading: false,
+      confirmButtonLoadingIcon: markRaw(Loading),
+      cancelButtonLoadingIcon: markRaw(Loading),
       confirmButtonDisabled: false,
       editorErrorMessage: '',
       // refer to: https://github.com/ElemeFE/element/commit/2999279ae34ef10c373ca795c87b020ed6753eed
@@ -304,14 +319,10 @@ export default defineComponent({
     const contentId = useId()
     const inputId = useId()
 
-    const btnSize = useSize(
-      computed(() => props.buttonSize),
-      { prop: true, form: true, formItem: true }
-    )
-
-    const iconComponent = computed(
-      () => state.icon || TypeComponentsMap[state.type] || ''
-    )
+    const iconComponent = computed(() => {
+      const type = state.type
+      return state.icon || (type && TypeComponentsMap[type]) || ''
+    })
     const hasMessage = computed(() => !!state.message)
     const rootRef = ref<HTMLElement>()
     const headerRef = ref<HTMLElement>()
@@ -325,7 +336,7 @@ export default defineComponent({
       () => state.inputValue,
       async (val) => {
         await nextTick()
-        if (props.boxType === 'prompt' && val !== null) {
+        if (props.boxType === 'prompt' && val) {
           validate()
         }
       },
@@ -364,7 +375,8 @@ export default defineComponent({
     )
 
     const draggable = computed(() => props.draggable)
-    useDraggable(rootRef, headerRef, draggable)
+    const overflow = computed(() => props.overflow)
+    useDraggable(rootRef, headerRef, draggable, overflow)
 
     onMounted(async () => {
       await nextTick()
@@ -395,7 +407,7 @@ export default defineComponent({
 
     const overlayEvent = useSameTarget(handleWrapperClick)
 
-    const handleInputEnter = (e: KeyboardEvent) => {
+    const handleInputEnter = (e: KeyboardEvent | Event) => {
       if (state.inputType !== 'textarea') {
         e.preventDefault()
         return handleAction('confirm')
@@ -426,7 +438,7 @@ export default defineComponent({
           return false
         }
         const inputValidator = state.inputValidator
-        if (typeof inputValidator === 'function') {
+        if (isFunction(inputValidator)) {
           const validateResult = inputValidator(state.inputValue)
           if (validateResult === false) {
             state.editorErrorMessage =
@@ -434,7 +446,7 @@ export default defineComponent({
             state.validateError = true
             return false
           }
-          if (typeof validateResult === 'string') {
+          if (isString(validateResult)) {
             state.editorErrorMessage = validateResult
             state.validateError = true
             return false
@@ -447,8 +459,8 @@ export default defineComponent({
     }
 
     const getInputElement = () => {
-      const inputRefs = inputRef.value.$refs
-      return (inputRefs.input || inputRefs.textarea) as HTMLElement
+      const inputRefs = inputRef.value?.$refs
+      return (inputRefs?.input ?? inputRefs?.textarea) as HTMLElement
     }
 
     const handleClose = () => {
@@ -471,9 +483,6 @@ export default defineComponent({
     if (props.lockScroll) {
       useLockscreen(visible)
     }
-
-    // restore to prev active element.
-    useRestoreActive(visible)
 
     return {
       ...toRefs(state),

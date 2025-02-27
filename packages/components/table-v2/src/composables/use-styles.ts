@@ -1,24 +1,23 @@
-import { computed, unref } from 'vue'
+import { ComputedRef, computed, unref } from 'vue'
 import { addUnit, isNumber } from '@element-plus/utils'
 import { enforceUnit, sum } from '../utils'
 
 import type { CSSProperties } from 'vue'
 import type { TableV2Props } from '../table'
 import type { UseColumnsReturn } from './use-columns'
-import type { UseDataReturn } from './use-data'
 
 type UseStyleProps = {
   columnsTotalWidth: UseColumnsReturn['columnsTotalWidth']
-  data: UseDataReturn['data']
   fixedColumnsOnLeft: UseColumnsReturn['fixedColumnsOnLeft']
   fixedColumnsOnRight: UseColumnsReturn['fixedColumnsOnRight']
+  rowsHeight: ComputedRef<number>
 }
 
 export const useStyles = (
   props: TableV2Props,
   {
     columnsTotalWidth,
-    data,
+    rowsHeight,
     fixedColumnsOnLeft,
     fixedColumnsOnRight,
   }: UseStyleProps
@@ -29,9 +28,7 @@ export const useStyles = (
     return fixed ? Math.max(Math.round(unref(columnsTotalWidth)), ret) : ret
   })
 
-  const headerWidth = computed(
-    () => unref(bodyWidth) + (props.fixed ? props.vScrollbarSize : 0)
-  )
+  const headerWidth = computed(() => unref(bodyWidth) + props.vScrollbarSize)
 
   const mainTableHeight = computed(() => {
     const { height = 0, maxHeight = 0, footerHeight, hScrollbarSize } = props
@@ -47,16 +44,6 @@ export const useStyles = (
     }
 
     return height - footerHeight
-  })
-
-  const rowsHeight = computed(() => {
-    const { rowHeight, estimatedRowHeight } = props
-    const _data = unref(data)
-    if (isNumber(estimatedRowHeight)) {
-      return _data.length * estimatedRowHeight
-    }
-
-    return _data.length * rowHeight
   })
 
   const fixedTableHeight = computed(() => {
@@ -116,7 +103,6 @@ export const useStyles = (
     leftTableWidth,
     rightTableWidth,
     headerWidth,
-    rowsHeight,
     windowHeight,
     footerHeight,
     emptyStyle,

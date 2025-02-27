@@ -23,7 +23,7 @@
       :transition="`${ns.namespace.value}-zoom-in-top`"
       :teleported="teleported"
       pure
-      persistent
+      :persistent="persistent"
       @before-show="handleBeforeShowTooltip"
       @show="handleShowTooltip"
       @before-hide="handleBeforeHideTooltip"
@@ -91,12 +91,11 @@
   </div>
 </template>
 <script lang="ts">
-// @ts-nocheck
 import {
   computed,
   defineComponent,
   getCurrentInstance,
-  onUnmounted,
+  onBeforeUnmount,
   provide,
   ref,
   toRef,
@@ -109,13 +108,14 @@ import ElScrollbar from '@element-plus/components/scrollbar'
 import ElIcon from '@element-plus/components/icon'
 import ElRovingFocusGroup from '@element-plus/components/roving-focus-group'
 import { ElOnlyChild } from '@element-plus/components/slot'
-import { addUnit, isArray } from '@element-plus/utils'
+import { useFormSize } from '@element-plus/components/form'
+import { addUnit, ensureArray } from '@element-plus/utils'
 import { ArrowDown } from '@element-plus/icons-vue'
-import { EVENT_CODE } from '@element-plus/constants'
-import { useId, useLocale, useNamespace, useSize } from '@element-plus/hooks'
+import { useId, useLocale, useNamespace } from '@element-plus/hooks'
 import { ElCollection as ElDropdownCollection, dropdownProps } from './dropdown'
 import { DROPDOWN_INJECTION_KEY } from './tokens'
 
+import type { TooltipInstance } from '@element-plus/components/tooltip'
 import type { CSSProperties } from 'vue'
 
 const { ButtonGroup: ElButtonGroup } = ElButton
@@ -142,31 +142,28 @@ export default defineComponent({
 
     const triggeringElementRef = ref()
     const referenceElementRef = ref()
-    const popperRef = ref<InstanceType<typeof ElTooltip> | null>(null)
-    const contentRef = ref<HTMLElement | null>(null)
+    const popperRef = ref<TooltipInstance>()
+    const contentRef = ref<HTMLElement>()
     const scrollbar = ref(null)
     const currentTabId = ref<string | null>(null)
     const isUsingKeyboard = ref(false)
-    const triggerKeys = [EVENT_CODE.enter, EVENT_CODE.space, EVENT_CODE.down]
 
     const wrapStyle = computed<CSSProperties>(() => ({
       maxHeight: addUnit(props.maxHeight),
     }))
     const dropdownTriggerKls = computed(() => [ns.m(dropdownSize.value)])
+    const trigger = computed(() => ensureArray(props.trigger))
 
     const defaultTriggerId = useId().value
-    const triggerId = computed<string>(() => {
-      return props.id || defaultTriggerId
-    })
+    const triggerId = computed<string>(() => props.id || defaultTriggerId)
 
     // The goal of this code is to focus on the tooltip triggering element when it is hovered.
     // This is a temporary fix for where closing the dropdown through pointerleave event focuses on a
     // completely different element. For a permanent solution, remove all calls to any "element.focus()"
     // that are triggered through pointer enter/leave events.
     watch(
-      [triggeringElementRef, toRef(props, 'trigger')],
+      [triggeringElementRef, trigger],
       ([triggeringElement, trigger], [prevTriggeringElement]) => {
-        const triggerArray = isArray(trigger) ? trigger : [trigger]
         if (prevTriggeringElement?.$el?.removeEventListener) {
           prevTriggeringElement.$el.removeEventListener(
             'pointerenter',
@@ -181,7 +178,7 @@ export default defineComponent({
         }
         if (
           triggeringElement?.$el?.addEventListener &&
-          triggerArray.includes('hover')
+          trigger.includes('hover')
         ) {
           triggeringElement.$el.addEventListener(
             'pointerenter',
@@ -192,9 +189,9 @@ export default defineComponent({
       { immediate: true }
     )
 
-    onUnmounted(() => {
-      if (triggeringElement?.$el?.removeEventListener) {
-        triggeringElement.$el.removeEventListener(
+    onBeforeUnmount(() => {
+      if (triggeringElementRef.value?.$el?.removeEventListener) {
+        triggeringElementRef.value.$el.removeEventListener(
           'pointerenter',
           onAutofocusTriggerEnter
         )
@@ -213,7 +210,7 @@ export default defineComponent({
       popperRef.value?.onOpen()
     }
 
-    const dropdownSize = useSize()
+    const dropdownSize = useFormSize()
 
     function commandHandler(...args: any[]) {
       emit('command', ...args)
@@ -230,7 +227,7 @@ export default defineComponent({
     function onItemLeave() {
       const contentEl = unref(contentRef)
 
-      contentEl?.focus()
+      trigger.value.includes('hover') && contentEl?.focus()
       currentTabId.value = null
     }
 
@@ -251,7 +248,7 @@ export default defineComponent({
 
     function handleShowTooltip(event?: Event) {
       if (event?.type === 'keydown') {
-        contentRef.value.focus()
+        contentRef.value?.focus()
       }
     }
 
@@ -296,7 +293,6 @@ export default defineComponent({
       dropdownTriggerKls,
       dropdownSize,
       triggerId,
-      triggerKeys,
       currentTabId,
       handleCurrentTabIdChange,
       handlerMainButtonClick,

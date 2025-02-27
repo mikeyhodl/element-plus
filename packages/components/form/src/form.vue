@@ -7,8 +7,9 @@
 <script lang="ts" setup>
 import { computed, provide, reactive, toRefs, watch } from 'vue'
 import { debugWarn, isFunction } from '@element-plus/utils'
-import { formContextKey } from '@element-plus/tokens'
-import { useNamespace, useSize } from '@element-plus/hooks'
+import { useNamespace } from '@element-plus/hooks'
+import { useFormSize } from './hooks'
+import { formContextKey } from './constants'
 import { formEmits, formProps } from './form'
 import { filterFields, useFormLabelWidth } from './utils'
 
@@ -19,7 +20,7 @@ import type {
   FormItemContext,
   FormValidateCallback,
   FormValidationResult,
-} from '@element-plus/tokens'
+} from './types'
 import type { FormItemProp } from './form-item'
 
 const COMPONENT_NAME = 'ElForm'
@@ -31,7 +32,7 @@ const emit = defineEmits(formEmits)
 
 const fields: FormItemContext[] = []
 
-const formSize = useSize()
+const formSize = useFormSize()
 const ns = useNamespace('form')
 const formClasses = computed(() => {
   const { labelPosition, inline } = props
@@ -46,6 +47,10 @@ const formClasses = computed(() => {
     },
   ]
 })
+
+const getField: FormContext['getField'] = (prop) => {
+  return fields.find((field) => field.prop === prop)
+}
 
 const addField: FormContext['addField'] = (field) => {
   fields.push(field)
@@ -104,6 +109,7 @@ const doValidateField = async (
   for (const field of fields) {
     try {
       await field.validate('')
+      if (field.validateState === 'error') field.resetField()
     } catch (fields) {
       validationErrors = {
         ...validationErrors,
@@ -125,7 +131,7 @@ const validateField: FormContext['validateField'] = async (
     const result = await doValidateField(modelProps)
     // When result is false meaning that the fields are not validatable
     if (result === true) {
-      callback?.(result)
+      await callback?.(result)
     }
     return result
   } catch (e) {
@@ -136,7 +142,7 @@ const validateField: FormContext['validateField'] = async (
     if (props.scrollToError) {
       scrollToField(Object.keys(invalidFields)[0])
     }
-    callback?.(false, invalidFields)
+    await callback?.(false, invalidFields)
     return shouldThrow && Promise.reject(invalidFields)
   }
 }
@@ -144,7 +150,7 @@ const validateField: FormContext['validateField'] = async (
 const scrollToField = (prop: FormItemProp) => {
   const field = filterFields(fields, prop)[0]
   if (field) {
-    field.$el?.scrollIntoView()
+    field.$el?.scrollIntoView(props.scrollIntoViewOptions)
   }
 }
 
@@ -155,7 +161,7 @@ watch(
       validate().catch((err) => debugWarn(err))
     }
   },
-  { deep: true }
+  { deep: true, flush: 'post' }
 )
 
 provide(
@@ -167,6 +173,7 @@ provide(
     resetFields,
     clearValidate,
     validateField,
+    getField,
     addField,
     removeField,
 
@@ -195,5 +202,9 @@ defineExpose({
    * @description Scroll to the specified fields.
    */
   scrollToField,
+  /**
+   * @description All fields context.
+   */
+  fields,
 })
 </script>

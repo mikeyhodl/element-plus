@@ -8,14 +8,7 @@
         <div :class="nsTime.be('range-picker', 'header')">
           {{ t('el.datepicker.startTime') }}
         </div>
-        <div
-          :class="[
-            nsTime.be('range-picker', 'body'),
-            nsTime.be('panel', 'content'),
-            nsTime.is('arrow', arrowControl),
-            { 'has-seconds': showSeconds },
-          ]"
-        >
+        <div :class="startContainerKls">
           <time-spinner
             ref="minSpinner"
             role="start"
@@ -36,14 +29,7 @@
         <div :class="nsTime.be('range-picker', 'header')">
           {{ t('el.datepicker.endTime') }}
         </div>
-        <div
-          :class="[
-            nsTime.be('range-picker', 'body'),
-            nsTime.be('panel', 'content'),
-            nsTime.is('arrow', arrowControl),
-            { 'has-seconds': showSeconds },
-          ]"
-        >
+        <div :class="endContainerKls">
           <time-spinner
             ref="maxSpinner"
             role="end"
@@ -121,6 +107,19 @@ const {
   defaultValue,
 } = pickerBase.props
 
+const startContainerKls = computed(() => [
+  nsTime.be('range-picker', 'body'),
+  nsTime.be('panel', 'content'),
+  nsTime.is('arrow', arrowControl),
+  showSeconds.value ? 'has-seconds' : '',
+])
+const endContainerKls = computed(() => [
+  nsTime.be('range-picker', 'body'),
+  nsTime.be('panel', 'content'),
+  nsTime.is('arrow', arrowControl),
+  showSeconds.value ? 'has-seconds' : '',
+])
+
 const startTime = computed(() => props.parsedValue![0])
 const endTime = computed(() => props.parsedValue![1])
 const oldValue = useOldValue(props)
@@ -154,6 +153,9 @@ const isValidValue = (_date: Dayjs[]) => {
 }
 
 const handleChange = (start: Dayjs, end: Dayjs) => {
+  if (!props.visible) {
+    return
+  }
   // todo getRangeAvailableTime(_date).millisecond(0)
   emit('pick', [start, end], true)
 }
