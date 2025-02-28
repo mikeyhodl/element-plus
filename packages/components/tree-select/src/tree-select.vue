@@ -15,6 +15,9 @@ export default defineComponent({
   props: {
     ...ElSelect.props,
     ...ElTree.props,
+    /**
+     * @description The cached data of the lazy node, the structure is the same as the data, used to get the label of the unloaded data
+     */
     cacheData: {
       type: Array,
       default: () => [],
@@ -60,7 +63,7 @@ export default defineComponent({
           'insertBefore',
           'insertAfter',
         ]),
-        ...pick(select.value, ['focus', 'blur']),
+        ...pick(select.value, ['focus', 'blur', 'selectedLabel']),
       })
     })
 

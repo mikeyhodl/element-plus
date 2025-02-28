@@ -1,5 +1,6 @@
 // @ts-nocheck
 import {
+  Fragment,
   computed,
   defineComponent,
   getCurrentInstance,
@@ -10,10 +11,11 @@ import {
   resolveDynamicComponent,
   unref,
 } from 'vue'
-import { isClient } from '@vueuse/core'
+import { useEventListener } from '@vueuse/core'
 import {
   getScrollBarWidth,
   hasOwn,
+  isClient,
   isNumber,
   isString,
 } from '@element-plus/utils'
@@ -339,7 +341,7 @@ const createGrid = ({
         },
         (x: number, y: number) => {
           hScrollbar.value?.onMouseUp?.()
-          hScrollbar.value?.onMouseUp?.()
+          vScrollbar.value?.onMouseUp?.()
           const width = unref(parsedWidth)
           const height = unref(parsedHeight)
           scrollTo({
@@ -354,6 +356,10 @@ const createGrid = ({
           })
         }
       )
+
+      useEventListener(windowRef, 'wheel', onWheel, {
+        passive: false,
+      })
 
       const scrollTo = ({
         scrollLeft = states.value.scrollLeft,
@@ -590,17 +596,21 @@ const createGrid = ({
         if (totalRow > 0 && totalColumn > 0) {
           for (let row = rowStart; row <= rowEnd; row++) {
             for (let column = columnStart; column <= columnEnd; column++) {
+              const key = itemKey({ columnIndex: column, data, rowIndex: row })
               children.push(
-                slots.default?.({
-                  columnIndex: column,
-                  data,
-                  key: itemKey({ columnIndex: column, data, rowIndex: row }),
-                  isScrolling: useIsScrolling
-                    ? unref(states).isScrolling
-                    : undefined,
-                  style: getItemStyle(row, column),
-                  rowIndex: row,
-                })
+                h(
+                  Fragment,
+                  { key },
+                  slots.default?.({
+                    columnIndex: column,
+                    data,
+                    isScrolling: useIsScrolling
+                      ? unref(states).isScrolling
+                      : undefined,
+                    style: getItemStyle(row, column),
+                    rowIndex: row,
+                  })
+                )
               )
             }
           }
@@ -639,6 +649,7 @@ const createGrid = ({
           {
             key: 0,
             class: ns.e('wrapper'),
+            role: props.role,
           },
           [
             h(
@@ -647,7 +658,6 @@ const createGrid = ({
                 class: props.className,
                 style: unref(windowStyle),
                 onScroll,
-                onWheel,
                 ref: windowRef,
               },
               !isString(Container) ? { default: () => Inner } : Inner

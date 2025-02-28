@@ -34,14 +34,11 @@ import {
   unref,
   watch,
 } from 'vue'
-import { NOOP } from '@vue/shared'
 import { isNil } from 'lodash-unified'
+import { NOOP, isElement } from '@element-plus/utils'
 import ElFocusTrap from '@element-plus/components/focus-trap'
-import {
-  POPPER_CONTENT_INJECTION_KEY,
-  formItemContextKey,
-} from '@element-plus/tokens'
-import { isElement } from '@element-plus/utils'
+import { formItemContextKey } from '@element-plus/components/form'
+import { POPPER_CONTENT_INJECTION_KEY } from './constants'
 import { popperContentEmits, popperContentProps } from './content'
 import {
   usePopperContent,
@@ -95,10 +92,7 @@ provide(POPPER_CONTENT_INJECTION_KEY, {
   arrowOffset,
 })
 
-if (
-  formItemContext &&
-  (formItemContext.addInputId || formItemContext.removeInputId)
-) {
+if (formItemContext) {
   // disallow auto-id from inside popper content
   provide(formItemContextKey, {
     ...formItemContext,

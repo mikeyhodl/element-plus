@@ -66,10 +66,13 @@ import {
   useId,
   usePopperContainer,
 } from '@element-plus/hooks'
-import { TOOLTIP_INJECTION_KEY } from '@element-plus/tokens'
+import { TOOLTIP_INJECTION_KEY } from './constants'
 import { tooltipEmits, useTooltipModelToggle, useTooltipProps } from './tooltip'
 import ElTooltipTrigger from './trigger.vue'
 import ElTooltipContent from './content.vue'
+import type { TooltipContentInstance } from './content'
+import type { PopperInstance } from '@element-plus/components/popper'
+import type { Ref } from 'vue'
 
 defineOptions({
   name: 'ElTooltip',
@@ -81,10 +84,8 @@ const emit = defineEmits(tooltipEmits)
 usePopperContainer()
 
 const id = useId()
-// TODO any is temporary, replace with `InstanceType<typeof ElPopper> | null` later
-const popperRef = ref<any>()
-// TODO any is temporary, replace with `InstanceType<typeof ElTooltipContent> | null` later
-const contentRef = ref<any>()
+const popperRef = ref<PopperInstance>()
+const contentRef = ref<TooltipContentInstance>()
 
 const updatePopper = () => {
   const popperComponent = unref(popperRef)
@@ -103,6 +104,7 @@ const { show, hide, hasUpdateHandler } = useTooltipModelToggle({
 const { onOpen, onClose } = useDelayedToggle({
   showAfter: toRef(props, 'showAfter'),
   hideAfter: toRef(props, 'hideAfter'),
+  autoClose: toRef(props, 'autoClose'),
   open: show,
   close: hide,
 })
@@ -153,15 +155,21 @@ watch(
   }
 )
 
-const isFocusInsideContent = () => {
-  const popperContent: HTMLElement | undefined =
-    contentRef.value?.contentRef?.popperContentRef
-  return popperContent && popperContent.contains(document.activeElement)
+const isFocusInsideContent = (event?: FocusEvent) => {
+  return contentRef.value?.isFocusInsideContent(event)
 }
 
 onDeactivated(() => open.value && hide())
 
-defineExpose({
+defineExpose<{
+  popperRef: Ref<PopperInstance | undefined>
+  contentRef: Ref<TooltipContentInstance | undefined>
+  isFocusInsideContent: (event?: FocusEvent) => boolean | undefined
+  updatePopper: () => void
+  onOpen: (event?: Event) => void
+  onClose: (event?: Event) => void
+  hide: () => void
+}>({
   /**
    * @description el-popper component instance
    */

@@ -1,15 +1,14 @@
-import { createVNode, render } from 'vue'
-import { isClient } from '@vueuse/core'
+import { createVNode, isVNode, render } from 'vue'
 import {
   debugWarn,
+  isBoolean,
+  isClient,
   isElement,
   isFunction,
   isNumber,
   isString,
-  isVNode,
 } from '@element-plus/utils'
-import { useZIndex } from '@element-plus/hooks'
-import { messageConfig } from '@element-plus/components/config-provider/src/config-provider'
+import { messageConfig } from '@element-plus/components/config-provider'
 import MessageConstructor from './message.vue'
 import { messageDefaults, messageTypes } from './message'
 import { instances } from './instance'
@@ -58,6 +57,22 @@ const normalizeOptions = (params?: MessageParams) => {
     normalized.appendTo = appendTo
   }
 
+  // When grouping is configured globally,
+  // if grouping is manually set when calling message individually and it is not equal to the default value,
+  // the global configuration cannot override the current setting. default => false
+  if (isBoolean(messageConfig.grouping) && !normalized.grouping) {
+    normalized.grouping = messageConfig.grouping
+  }
+  if (isNumber(messageConfig.duration) && normalized.duration === 3000) {
+    normalized.duration = messageConfig.duration
+  }
+  if (isNumber(messageConfig.offset) && normalized.offset === 16) {
+    normalized.offset = messageConfig.offset
+  }
+  if (isBoolean(messageConfig.showClose) && !normalized.showClose) {
+    normalized.showClose = messageConfig.showClose
+  }
+
   return normalized as MessageParamsNormalized
 }
 
@@ -74,8 +89,6 @@ const createMessage = (
   { appendTo, ...options }: MessageParamsNormalized,
   context?: AppContext | null
 ): MessageContext => {
-  const { nextZIndex } = useZIndex()
-
   const id = `message_${seed++}`
   const userOnClose = options.onClose
 
@@ -83,7 +96,8 @@ const createMessage = (
 
   const props = {
     ...options,
-    zIndex: nextZIndex() + options.zIndex,
+    // now the zIndex will be used inside the message.vue component instead of here.
+    // zIndex: nextIndex() + options.zIndex
     id,
     onClose: () => {
       userOnClose?.()
@@ -143,10 +157,6 @@ const message: MessageFn &
 ) => {
   if (!isClient) return { close: () => undefined }
 
-  if (isNumber(messageConfig.max) && instances.length >= messageConfig.max) {
-    return { close: () => undefined }
-  }
-
   const normalized = normalizeOptions(options)
 
   if (normalized.grouping && instances.length) {
@@ -158,6 +168,10 @@ const message: MessageFn &
       instance.props.type = normalized.type
       return instance.handler
     }
+  }
+
+  if (isNumber(messageConfig.max) && instances.length >= messageConfig.max) {
+    return { close: () => undefined }
   }
 
   const instance = createMessage(normalized, context)

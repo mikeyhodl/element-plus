@@ -1,6 +1,9 @@
 export default {
   name: 'ar',
   el: {
+    breadcrumb: {
+      label: 'Breadcrumb', // to be translated
+    },
     colorpicker: {
       confirm: 'موافق',
       clear: 'إزالة',
@@ -75,6 +78,9 @@ export default {
       noData: 'لايوجد بيانات',
       placeholder: 'إختر',
     },
+    mention: {
+      loading: 'جار التحميل',
+    },
     dropdown: {
       toggleDropdown: 'تبديل القائمة',
     },
@@ -89,6 +95,12 @@ export default {
       pagesize: '/صفحة',
       total: 'الكل {total}',
       pageClassifier: '',
+      page: 'Page', // to be translated
+      prev: 'Go to previous page', // to be translated
+      next: 'Go to next page', // to be translated
+      currentPage: 'page {pager}', // to be translated
+      prevPages: 'Previous {pager} pages', // to be translated
+      nextPages: 'Next {pager} pages', // to be translated
     },
     dialog: {
       close: 'أغلق هذا التبويب',
@@ -136,6 +148,11 @@ export default {
     popconfirm: {
       confirmButtonText: 'Yes', // to be translated
       cancelButtonText: 'No', // to be translated
+    },
+    carousel: {
+      leftArrow: 'Carousel arrow left', // to be translated
+      rightArrow: 'Carousel arrow right', // to be translated
+      indicator: 'Carousel switch to index {index}', // to be translated
     },
   },
 }

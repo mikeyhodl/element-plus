@@ -1,13 +1,10 @@
 import { computed, onBeforeMount } from 'vue'
-import { isClient } from '@vueuse/core'
-import { useGlobalConfig } from '../use-global-config'
-import { defaultNamespace } from '../use-namespace'
+import { isClient } from '@element-plus/utils'
+import { useGetDerivedNamespace } from '../use-namespace'
 import { useIdInjection } from '../use-id'
 
-let cachedContainer: HTMLElement
-
 export const usePopperContainerId = () => {
-  const namespace = useGlobalConfig('namespace', defaultNamespace)
+  const namespace = useGetDerivedNamespace()
   const idInjection = useIdInjection()
 
   const id = computed(() => {
@@ -29,18 +26,23 @@ const createContainer = (id: string) => {
 }
 
 export const usePopperContainer = () => {
+  const { id, selector } = usePopperContainerId()
   onBeforeMount(() => {
     if (!isClient) return
 
-    const { id, selector } = usePopperContainerId()
     // This is for bypassing the error that when under testing env, we often encounter
     // document.body.innerHTML = '' situation
     // for this we need to disable the caching since it's not really needed
     if (
       process.env.NODE_ENV === 'test' ||
-      (!cachedContainer && !document.body.querySelector(selector.value))
+      !document.body.querySelector(selector.value)
     ) {
-      cachedContainer = createContainer(id.value)
+      createContainer(id.value)
     }
   })
+
+  return {
+    id,
+    selector,
+  }
 }

@@ -24,22 +24,24 @@
           {{ title }}
         </div>
         <div :class="ns.e('action')">
-          <el-button
-            size="small"
-            :type="cancelButtonType === 'text' ? '' : cancelButtonType"
-            :text="cancelButtonType === 'text'"
-            @click="cancel"
-          >
-            {{ finalCancelButtonText }}
-          </el-button>
-          <el-button
-            size="small"
-            :type="confirmButtonType === 'text' ? '' : confirmButtonType"
-            :text="confirmButtonType === 'text'"
-            @click="confirm"
-          >
-            {{ finalConfirmButtonText }}
-          </el-button>
+          <slot name="actions" :confirm="confirm" :cancel="cancel">
+            <el-button
+              size="small"
+              :type="cancelButtonType === 'text' ? '' : cancelButtonType"
+              :text="cancelButtonType === 'text'"
+              @click="cancel"
+            >
+              {{ finalCancelButtonText }}
+            </el-button>
+            <el-button
+              size="small"
+              :type="confirmButtonType === 'text' ? '' : confirmButtonType"
+              :text="confirmButtonType === 'text'"
+              @click="confirm"
+            >
+              {{ finalConfirmButtonText }}
+            </el-button>
+          </slot>
         </div>
       </div>
     </template>
@@ -56,7 +58,7 @@ import ElIcon from '@element-plus/components/icon'
 import ElTooltip from '@element-plus/components/tooltip'
 import { useLocale, useNamespace } from '@element-plus/hooks'
 import { addUnit } from '@element-plus/utils'
-import { popconfirmProps } from './popconfirm'
+import { popconfirmEmits, popconfirmProps } from './popconfirm'
 
 import type { TooltipInstance } from '@element-plus/components/tooltip'
 
@@ -65,6 +67,7 @@ defineOptions({
 })
 
 const props = defineProps(popconfirmProps)
+const emit = defineEmits(popconfirmEmits)
 
 const { t } = useLocale()
 const ns = useNamespace('popconfirm')
@@ -80,12 +83,12 @@ const style = computed(() => {
   }
 })
 
-const confirm = (e: Event) => {
-  props.onConfirm?.(e)
+const confirm = (e: MouseEvent) => {
+  emit('confirm', e)
   hidePopper()
 }
-const cancel = (e: Event) => {
-  props.onCancel?.(e)
+const cancel = (e: MouseEvent) => {
+  emit('cancel', e)
   hidePopper()
 }
 

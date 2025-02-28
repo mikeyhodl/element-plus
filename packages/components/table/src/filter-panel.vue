@@ -9,8 +9,9 @@
     teleported
     effect="light"
     pure
-    :popper-class="ns.b()"
+    :popper-class="filterClassName"
     persistent
+    :append-to="appendTo"
   >
     <template #content>
       <div v-if="multiple">
@@ -23,7 +24,7 @@
               <el-checkbox
                 v-for="filter in filters"
                 :key="filter.value"
-                :label="filter.value"
+                :value="filter.value"
               >
                 {{ filter.text }}
               </el-checkbox>
@@ -49,8 +50,7 @@
           :class="[
             ns.e('list-item'),
             {
-              [ns.is('active')]:
-                filterValue === undefined || filterValue === null,
+              [ns.is('active')]: isPropAbsent(filterValue),
             },
           ]"
           @click="handleSelect(null)"
@@ -78,8 +78,10 @@
         @click="showFilterPanel"
       >
         <el-icon>
-          <arrow-up v-if="column.filterOpened" />
-          <arrow-down v-else />
+          <slot name="filter-icon">
+            <arrow-up v-if="column.filterOpened" />
+            <arrow-down v-else />
+          </slot>
         </el-icon>
       </span>
     </template>
@@ -96,8 +98,9 @@ import { ClickOutside } from '@element-plus/directives'
 import { useLocale, useNamespace } from '@element-plus/hooks'
 import ElTooltip from '@element-plus/components/tooltip'
 import ElScrollbar from '@element-plus/components/scrollbar'
-import type { Placement } from '@element-plus/components/popper'
+import { isPropAbsent } from '@element-plus/utils'
 
+import type { Placement } from '@element-plus/components/popper'
 import type { PropType, WritableComputedRef } from 'vue'
 import type { TableColumnCtx } from './table-column/defaults'
 import type { TableHeader } from './table-header'
@@ -131,6 +134,9 @@ export default defineComponent({
     upDataColumn: {
       type: Function,
     },
+    appendTo: {
+      type: String,
+    },
   },
   setup(props) {
     const instance = getCurrentInstance()
@@ -145,11 +151,17 @@ export default defineComponent({
     const filters = computed(() => {
       return props.column && props.column.filters
     })
+    const filterClassName = computed(() => {
+      if (props.column.filterClassName) {
+        return `${ns.b()} ${props.column.filterClassName}`
+      }
+      return ns.b()
+    })
     const filterValue = computed({
       get: () => (props.column?.filteredValue || [])[0],
       set: (value: string) => {
         if (filteredValue.value) {
-          if (typeof value !== 'undefined' && value !== null) {
+          if (!isPropAbsent(value)) {
             filteredValue.value.splice(0, 1, value)
           } else {
             filteredValue.value.splice(0, 1)
@@ -200,7 +212,7 @@ export default defineComponent({
     }
     const handleSelect = (_filterValue?: string) => {
       filterValue.value = _filterValue
-      if (typeof _filterValue !== 'undefined' && _filterValue !== null) {
+      if (!isPropAbsent(_filterValue)) {
         confirmFilter(filteredValue.value)
       } else {
         confirmFilter([])
@@ -234,12 +246,14 @@ export default defineComponent({
     return {
       tooltipVisible,
       multiple,
+      filterClassName,
       filteredValue,
       filterValue,
       filters,
       handleConfirm,
       handleReset,
       handleSelect,
+      isPropAbsent,
       isActive,
       t,
       ns,

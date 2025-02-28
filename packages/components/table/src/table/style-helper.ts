@@ -9,7 +9,7 @@ import {
   watchEffect,
 } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
-import { useSize } from '@element-plus/hooks'
+import { useFormSize } from '@element-plus/components/form'
 
 import type { Table, TableProps } from './defaults'
 import type { Store } from '../store'
@@ -47,6 +47,7 @@ function useStyle<T>(
   const bodyScrollHeight = ref(0)
   const headerScrollHeight = ref(0)
   const footerScrollHeight = ref(0)
+  const appendScrollHeight = ref(0)
 
   watchEffect(() => {
     layout.setHeight(props.height)
@@ -112,6 +113,10 @@ function useStyle<T>(
       layout.updateElsHeight()
     }
     layout.updateColumnsWidth()
+
+    // When the test case is running, the context environment simulated by jsdom may have been destroyed,
+    // and window.requestAnimationFrame does not exist at this time.
+    if (typeof window === 'undefined') return
     requestAnimationFrame(syncPosition)
   }
   onMounted(async () => {
@@ -243,10 +248,12 @@ function useStyle<T>(
     tableScrollHeight.value = table.refs.tableWrapper?.scrollHeight || 0
     headerScrollHeight.value = tableHeader?.scrollHeight || 0
     footerScrollHeight.value = table.refs.footerWrapper?.offsetHeight || 0
+    appendScrollHeight.value = table.refs.appendWrapper?.offsetHeight || 0
     bodyScrollHeight.value =
       tableScrollHeight.value -
       headerScrollHeight.value -
-      footerScrollHeight.value
+      footerScrollHeight.value -
+      appendScrollHeight.value
 
     if (shouldUpdateLayout) {
       resizeState.value = {
@@ -257,7 +264,7 @@ function useStyle<T>(
       doLayout()
     }
   }
-  const tableSize = useSize()
+  const tableSize = useFormSize()
   const bodyWidth = computed(() => {
     const { bodyWidth: bodyWidth_, scrollY, gutterWidth } = layout
     return bodyWidth_.value
@@ -283,24 +290,6 @@ function useStyle<T>(
     }
   })
 
-  const tableInnerStyle = computed(() => {
-    if (props.height) {
-      return {
-        height: !Number.isNaN(Number(props.height))
-          ? `${props.height}px`
-          : props.height,
-      }
-    }
-    if (props.maxHeight) {
-      return {
-        maxHeight: !Number.isNaN(Number(props.maxHeight))
-          ? `${props.maxHeight}px`
-          : props.maxHeight,
-      }
-    }
-    return {}
-  })
-
   const scrollbarStyle = computed(() => {
     if (props.height) {
       return {
@@ -309,16 +298,12 @@ function useStyle<T>(
     }
     if (props.maxHeight) {
       if (!Number.isNaN(Number(props.maxHeight))) {
-        const maxHeight = props.maxHeight
-        const reachMaxHeight = tableScrollHeight.value >= Number(maxHeight)
-        if (reachMaxHeight) {
-          return {
-            maxHeight: `${
-              tableScrollHeight.value -
-              headerScrollHeight.value -
-              footerScrollHeight.value
-            }px`,
-          }
+        return {
+          maxHeight: `${
+            props.maxHeight -
+            headerScrollHeight.value -
+            footerScrollHeight.value
+          }px`,
         }
       } else {
         return {
@@ -371,7 +356,6 @@ function useStyle<T>(
     tableBodyStyles,
     tableLayout,
     scrollbarViewStyle,
-    tableInnerStyle,
     scrollbarStyle,
   }
 }
